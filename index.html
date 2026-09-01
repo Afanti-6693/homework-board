@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>🌟 我的作业本</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg1:#fff5e6; --bg2:#ffe3f1; --bg3:#e3f3ff;
+    --card:#ffffff; --ink:#4a3b55; --muted:#9a8aa6;
+    --pink:#ff7eb6; --blue:#5ec6ff; --green:#7bd88f; --yellow:#ffd24c; --purple:#b48cff;
+    --shadow:0 8px 22px rgba(150,110,170,.18);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Comic Sans MS",system-ui,sans-serif;
+    color:var(--ink);background:linear-gradient(135deg,var(--bg1),var(--bg2) 55%,var(--bg3));
+    min-height:100vh;padding:18px 14px 60px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:14px;}
+  .title-input{font-size:26px;font-weight:800;text-align:center;border:none;background:transparent;color:var(--ink);width:100%;outline:none;padding:4px;border-bottom:2px dashed transparent;}
+  .title-input:focus{border-bottom-color:var(--pink);}
+  .date-row{margin-top:4px;color:var(--muted);font-size:14px;font-weight:600;}
+
+  .progress-card{background:var(--card);border-radius:22px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;}
+  .progress-top{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:16px;}
+  .progress-top .count{color:var(--pink);}
+  .bar{height:16px;background:#f0e9f5;border-radius:99px;margin-top:10px;overflow:hidden;}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:99px;transition:width .5s cubic-bezier(.34,1.56,.64,1);}
+  .stars{margin-top:10px;font-size:22px;letter-spacing:2px;min-height:26px;}
+
+  .sec{background:var(--card);border-radius:22px;padding:14px 14px 16px;box-shadow:var(--shadow);margin-bottom:14px;}
+  .sec-title{font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .sec-title .badge{margin-left:auto;font-size:13px;font-weight:800;background:#f3edf8;color:var(--muted);border-radius:99px;padding:3px 10px;}
+  .sec-title .toggle{margin-left:auto;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;}
+
+  ul.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  li.task{display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#faf6ff;animation:pop .25s ease;}
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+  li.task.done{opacity:.6;}
+  .check{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:3px solid var(--blue);background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;cursor:pointer;transition:transform .15s,background .2s,border-color .2s;}
+  .check:active{transform:scale(.88);}
+  li.done .check{background:var(--green);border-color:var(--green);}
+  .body{flex:1;min-width:0;}
+  .txt{font-size:17px;font-weight:700;word-break:break-word;line-height:1.35;}
+  li.done .txt{text-decoration:line-through;color:var(--muted);}
+  .meta{margin-top:4px;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .chip{background:#fff;border:1px solid #efe6f5;border-radius:99px;padding:2px 9px;font-weight:700;}
+  .chip.notice{background:#fff3e0;border-color:#ffd9a8;color:#c97a16;}
+  .chip.parent{background:#eaf6ff;border-color:#bfe2ff;color:#1f7fc4;}
+  .del{flex:0 0 auto;width:32px;height:32px;border:none;background:#fff0f5;color:var(--pink);border-radius:50%;font-size:18px;font-weight:800;cursor:pointer;}
+  .del:active{transform:scale(.9);}
+  .empty{text-align:center;color:var(--muted);padding:22px 10px;font-weight:700;font-size:14px;}
+  .empty .big{font-size:40px;display:block;margin-bottom:6px;}
+
+  /* 今日作业 · 按科目标签分组 */
+  .hw-group{margin-bottom:6px;}
+  .hw-subj{display:flex;align-items:center;gap:8px;margin:12px 2px 8px;font-weight:800;font-size:15px;color:var(--ink);}
+  .hw-subj .chip{font-size:14px;padding:3px 12px;}
+  .hw-count{font-size:12px;font-weight:800;color:var(--muted);background:#f3edf8;border-radius:99px;padding:2px 9px;}
+
+  .type-tabs{display:flex;gap:8px;margin-bottom:10px;}
+  .type-tab{flex:1;text-align:center;border:2px solid #eee;background:#fff;border-radius:14px;padding:9px 4px;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;}
+  .type-tab.sel{border-color:var(--pink);background:#fff0f7;color:var(--pink);}
+
+  .subjects{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;}
+  .subj{border:2px solid #eee;background:#fff;border-radius:99px;padding:6px 11px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+  .subj.sel{border-color:var(--blue);background:#eef9ff;transform:translateY(-1px);}
+
+  .row{display:flex;gap:10px;}
+  .task-input{flex:1;border:2px solid #eee;border-radius:14px;padding:12px 14px;font-size:17px;outline:none;font-family:inherit;}
+  .task-input:focus{border-color:var(--blue);}
+  .add-btn{flex:0 0 auto;border:none;background:linear-gradient(135deg,var(--pink),#ff9a6c);color:#fff;font-weight:800;border-radius:14px;padding:0 18px;font-size:16px;cursor:pointer;box-shadow:0 6px 14px rgba(255,126,182,.4);}
+  .add-btn:active{transform:scale(.96);}
+
+  .hint{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.6;}
+  .modal.wide .box{max-width:520px;}
+  .btn-ghost{flex:1;min-width:120px;border:none;background:#f2f2f7;color:#555;border-radius:14px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;}
+  .btn-ghost:active{transform:scale(.97);}
+
+  .note-tabs{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+  .note-tab{border:2px solid #eee;background:#fff;border-radius:99px;padding:6px 13px;font-size:14px;font-weight:700;cursor:pointer;}
+  .note-tab.sel{border-color:var(--green);background:#eafaf0;}
+  .note-input{width:100%;border:2px solid #eee;border-radius:14px;padding:12px;font-size:16px;outline:none;font-family:inherit;resize:vertical;min-height:64px;}
+  .note-input:focus{border-color:var(--green);}
+  .note-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .thumb{position:relative;width:74px;height:74px;border-radius:12px;overflow:hidden;border:2px solid #eee;background:#f7f2fb;}
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;font-size:13px;cursor:pointer;line-height:1;}
+  .upload-btn{flex:0 0 auto;border:2px dashed var(--green);color:#3a9e57;background:#fff;border-radius:14px;padding:0 16px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;}
+
+  .notes-grid{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .note{background:#faf6ff;border-radius:16px;padding:12px;}
+  .note-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .note-date{font-size:12px;color:var(--muted);font-weight:700;}
+  .note-text{font-size:16px;font-weight:600;white-space:pre-wrap;word-break:break-word;line-height:1.45;}
+  .note .note-imgs .thumb{cursor:zoom-in;}
+
+  .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  .btn{flex:1;min-width:140px;border:none;border-radius:16px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .btn.qq{background:#12b7f5;color:#fff;box-shadow:0 6px 14px rgba(18,183,245,.35);}
+  .btn.copy{background:#fff;color:var(--ink);box-shadow:var(--shadow);}
+  .btn.bell{background:#fff;color:var(--purple);box-shadow:var(--shadow);}
+  .btn:active{transform:scale(.97);}
+
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:all .3s;z-index:50;box-shadow:var(--shadow);max-width:90vw;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .modal{position:fixed;inset:0;background:rgba(60,40,70,.55);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+  .modal.show{display:flex;animation:fade .25s;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal .box{background:#fff;border-radius:24px;padding:24px 22px;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow);}
+  .modal .emoji{font-size:64px;}
+  .modal h2{font-size:24px;margin:8px 0 6px;}
+  .modal p{color:var(--muted);font-weight:700;margin:0 0 18px;line-height:1.6;}
+  .modal .mbtns{display:flex;gap:10px;}
+  .modal .mbtns .btn{font-size:15px;padding:12px;}
+  .bounce{animation:bounce 1s infinite alternate;}
+  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+
+  .confetti{position:fixed;top:-10px;font-size:22px;pointer-events:none;z-index:55;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2;}}
+  code{background:#fff;border-radius:6px;padding:1px 6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <input id="title" class="title-input" value="我的作业本" maxlength="20" />
+    <div class="date-row" id="dateRow"></div>
+  </header>
+
+  <!-- 作业进度 -->
+  <div class="progress-card">
+    <div class="progress-top"><span>今日作业完成啦～</span><span class="count" id="count">0 / 0</span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="stars" id="stars"></div>
+  </div>
+
+  <!-- 任务添加区 -->
+  <div class="sec">
+    <div class="type-tabs" id="typeTabs"></div>
+    <div class="subjects" id="subjects"></div>
+    <div class="row">
+      <input id="taskInput" class="task-input" placeholder="写一项，或粘贴微信群作业自动拆分 ✂️" maxlength="500" />
+      <button class="add-btn" id="addBtn">＋ 添加</button>
+    </div>
+    <div class="hint" id="addHint"></div>
+  </div>
+
+  <!-- 今日作业 -->
+  <div class="sec">
+    <div class="sec-title">📚 今日作业 <span class="badge" id="hwBadge">0</span></div>
+    <ul class="tasks" id="hwList"></ul>
+  </div>
+
+  <!-- 老师通知 -->
+  <div class="sec">
+    <div class="sec-title">📢 老师通知 <span class="badge" id="ntBadge">0</span></div>
+    <ul class="tasks" id="ntList"></ul>
+  </div>
+
+  <!-- 家长任务 -->
+  <div class="sec">
+    <div class="sec-title">🤝 家长任务 <span class="badge" id="ptBadge">0</span></div>
+    <ul class="tasks" id="ptList"></ul>
+  </div>
+
+  <!-- 课堂笔记 -->
+  <div class="sec">
+    <div class="sec-title">📝 课堂笔记 <span class="toggle" id="noteToggle">查看往日</span></div>
+    <div class="note-tabs" id="noteTabs"></div>
+    <div class="notes-grid" id="notesGrid"></div>
+
+    <div style="margin-top:14px;border-top:1px dashed #eee;padding-top:12px;">
+      <div class="sec-title" style="margin-bottom:8px;font-size:16px;">➕ 记一条笔记</div>
+      <div class="subjects" id="noteSubjects"></div>
+      <textarea id="noteText" class="note-input" placeholder="写下课堂重点，或粘贴/上传微信里的板书照片"></textarea>
+      <div class="note-imgs" id="noteImgs"></div>
+      <div class="row" style="margin-top:10px;">
+        <label class="upload-btn">📷 上传图片<input type="file" id="noteFile" accept="image/*" multiple hidden></label>
+        <button class="add-btn" id="addNoteBtn">＋ 保存笔记</button>
+      </div>
+      <div class="hint">小提示：在文本框里按 <code>Ctrl/Cmd+V</code> 可直接粘贴微信复制的图片（需部署到服务器后生效）。</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn qq" id="qqBtn">🐧 分享到 QQ</button>
+    <button class="btn copy" id="copyBtn">🔗 复制链接</button>
+    <button class="btn bell" id="bellBtn">🔔 开启提醒</button>
+  </div>
+  <p class="hint" style="text-align:center;">
+    作业本存在云端，把同一个链接发给家人，大家看到的是同一本 ✨<br/>
+    家长加作业、孩子勾选约 20 秒同步；带图笔记需部署到服务器后上传显示。
+  </p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 庆祝 -->
+<div class="modal" id="celebrate">
+  <div class="box">
+    <div class="emoji bounce">🎉</div>
+    <h2>全部完成啦！</h2>
+    <p id="celebText">你真是太棒了，给你一百个赞！</p>
+    <button class="btn copy" id="celebClose" style="width:100%">好耶～</button>
+  </div>
+</div>
+
+<!-- 17:30 提醒 -->
+<div class="modal" id="remind">
+  <div class="box">
+    <div class="emoji bounce">⏰</div>
+    <h2>17:30 到啦！</h2>
+    <p>记得把今天的作业本转发到 QQ 群哦～<br/>点下面按钮一键分享。</p>
+    <div class="mbtns">
+      <button class="btn qq" id="remindQQ">🐧 分享到 QQ</button>
+      <button class="btn copy" id="remindCopy">🔗 复制链接</button>
+    </div>
+    <div style="margin-top:10px;"><button class="btn bell" id="remindLater" style="width:100%">稍后再说</button></div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  "use strict";
+
+  var TASK_SUBJECTS = [
+    {key:"语文",icon:"📖"},{key:"数学",icon:"🔢"},{key:"英语",icon:"🔤"},
+    {key:"阅读",icon:"📚"},{key:"科学",icon:"🔬"},{key:"美术",icon:"🎨"},
+    {key:"音乐",icon:"🎵"},{key:"体育",icon:"🏃"},{key:"其他",icon:"⭐"}
+  ];
+  var NOTE_SUBJECTS = [{key:"语文",icon:"📖"},{key:"数学",icon:"🔢"},{key:"英语",icon:"🔤"}];
+  var TYPES = [
+    {key:"homework",label:"作业"},
+    {key:"notice",label:"老师通知"},
+    {key:"parent",label:"家长任务"}
+  ];
+  var PRAISE = ["你真是太棒了，给你一百个赞！","作业小达人就是你！","妈妈/爸爸要给你鼓掌啦 👏","今天的你闪闪发光 ✨","全部搞定，去玩吧！"];
+  var CONFETTI = ["🎉","⭐","🌟","💖","🍬","🌈","✨","🏆"];
+
+  // ---------- 状态 ----------
+  var state = { title:"我的作业本", tasks:[], notes:[], _v:0 };
+  var curType = "homework";
+  var curSubject = "语文";
+  var curNoteSubject = "语文";
+  var noteFilter = "all";      // all | 语文 | 数学 | 英语
+  var noteTodayOnly = true;
+  var pendingImages = [];
+  var remindedToday = false;
+
+  // ---------- 云端共享本 ----------
+  var boardId = null;
+  var savePending = false, saveDirty = false;
+
+  function newBoardId(){
+    var a = new Uint8Array(9);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function(b){ return ("0"+b.toString(16)).slice(-2); }).join("");
+  }
+  function getBoardIdFromUrl(){ var p = new URLSearchParams(location.search); return p.get("b"); }
+  function ensureBoardId(){
+    var id = getBoardIdFromUrl();
+    if(!id){
+      id = newBoardId();
+      var u = new URL(location.href); u.searchParams.set("b", id);
+      history.replaceState(null, "", u.pathname + u.search);
+    }
+    return id;
+  }
+  function normalize(d){
+    d = d || {};
+    if(!d.title) d.title = "我的作业本";
+    if(!Array.isArray(d.tasks)) d.tasks = [];
+    if(!Array.isArray(d.notes)) d.notes = [];
+    if(typeof d._v !== "number") d._v = 0;
+    return d;
+  }
+
+  function load(){
+    return fetch("/api/board/" + boardId, { cache:"no-store" })
+      .then(function(r){ if(!r.ok) throw new Error("load failed"); return r.json(); })
+      .then(function(d){ state = normalize(d); })
+      .catch(function(e){ state = normalize(null); toast("⚠️ 云端读取失败，已用空白本（可刷新重试）"); });
+  }
+  function save(){
+    if(savePending){ saveDirty = true; return; }
+    savePending = true;
+    state._v = (state._v || 0) + 1;
+    var payload = JSON.stringify(state);
+    fetch("/api/board/" + boardId, { method:"POST", headers:{"Content-Type":"application/json"}, body:payload })
+      .then(function(r){ if(!r.ok) throw new Error("save failed"); })
+      .catch(function(e){ state._v = Math.max(0, (state._v || 1) - 1); toast("⚠️ 保存失败，请检查网络后重试"); })
+      .then(function(){ savePending = false; if(saveDirty){ saveDirty = false; save(); } });
+  }
+  // 近实时同步：他人改动后约 20 秒在本机刷新
+  function pollBoard(){
+    if(savePending || document.hidden) return;
+    fetch("/api/board/" + boardId, { cache:"no-store" })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ if(!d) return; d = normalize(d); if((d._v || 0) > (state._v || 0)){ state = d; renderAll(); } })
+      .catch(function(){});
+  }
+
+  // ---------- 工具 ----------
+  function $(id){return document.getElementById(id);}
+  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+  function escapeHtml(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+  function subjectIcon(key, list){var f=(list||TASK_SUBJECTS).filter(function(s){return s.key===key;})[0];return f?f.icon:"⭐";}
+  function todayStr(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+  function fmtDate(){var d=new Date();var wk=["日","一","二","三","四","五","六"][d.getDay()];return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日 星期"+wk;}
+
+  // ---------- 渲染 ----------
+  function renderTypeTabs(){
+    var box=$("typeTabs"); box.innerHTML="";
+    TYPES.forEach(function(t){
+      var el=document.createElement("div");
+      el.className="type-tab"+(t.key===curType?" sel":"");
+      el.textContent=t.label;
+      el.onclick=function(){curType=t.key;renderTypeTabs();renderSubjectChips();updateAddHint();};
+      box.appendChild(el);
+    });
+  }
+  function renderSubjectChips(){
+    var box=$("subjects"); box.innerHTML="";
+    if(curType!=="homework"){ box.style.display="none"; return; }
+    box.style.display="flex";
+    TASK_SUBJECTS.forEach(function(s){
+      var el=document.createElement("div");
+      el.className="subj"+(s.key===curSubject?" sel":"");
+      el.textContent=s.icon+" "+s.key;
+      el.onclick=function(){curSubject=s.key;renderSubjectChips();};
+      box.appendChild(el);
+    });
+  }
+  function renderNoteSubjects(){
+    var box=$("noteSubjects"); box.innerHTML="";
+    NOTE_SUBJECTS.forEach(function(s){
+      var el=document.createElement("div");
+      el.className="subj"+(s.key===curNoteSubject?" sel":"");
+      el.textContent=s.icon+" "+s.key;
+      el.onclick=function(){curNoteSubject=s.key;renderNoteSubjects();};
+      box.appendChild(el);
+    });
+  }
+  function renderNoteTabs(){
+    var box=$("noteTabs"); box.innerHTML="";
+    [{key:"all",icon:"🗂️",label:"全部"},{key:"语文",icon:"📖",label:"语文"},{key:"数学",icon:"🔢",label:"数学"},{key:"英语",icon:"🔤",label:"英语"}].forEach(function(t){
+      var el=document.createElement("div");
+      el.className="note-tab"+(t.key===noteFilter?" sel":"");
+      el.textContent=t.icon+" "+t.label;
+      el.onclick=function(){noteFilter=t.key;renderNoteTabs();renderNotes();};
+      box.appendChild(el);
+    });
+  }
+
+  function taskItemHtml(t){
+    var subj = TASK_SUBJECTS.filter(function(s){return s.key===t.subject;})[0]||TASK_SUBJECTS[TASK_SUBJECTS.length-1];
+    var typeChip = "";
+    if(t.type==="notice") typeChip='<span class="chip notice">老师通知</span>';
+    else if(t.type==="parent") typeChip='<span class="chip parent">家长任务</span>';
+    return '<li class="task'+(t.done?" done":"")+'" data-id="'+t.id+'">'+
+      '<div class="check" data-act="toggle">'+(t.done?"✓":"")+'</div>'+
+      '<div class="body"><div class="txt">'+escapeHtml(t.text)+'</div>'+
+      '<div class="meta"><span class="chip">'+subj.icon+' '+t.subject+'</span>'+typeChip+
+      (t.time?'<span class="chip">⏰ '+escapeHtml(t.time)+'</span>':'')+'</div></div>'+
+      '<button class="del" data-act="del">×</button></li>';
+  }
+  // 单条作业（分组后不再重复科目标签，科目标签已在组头）
+  function homeworkItemHtml(t){
+    return '<li class="task'+(t.done?" done":"")+'" data-id="'+t.id+'">'+
+      '<div class="check" data-act="toggle">'+(t.done?"✓":"")+'</div>'+
+      '<div class="body"><div class="txt">'+escapeHtml(t.text)+'</div>'+
+      (t.time?'<div class="meta"><span class="chip">⏰ '+escapeHtml(t.time)+'</span></div>':'')+
+      '</div>'+
+      '<button class="del" data-act="del">×</button></li>';
+  }
+  // 今日作业：按科目标签分组渲染
+  function renderHomework(){
+    var box=$("hwList"); box.innerHTML="";
+    var list=state.tasks.filter(function(t){return t.type==="homework";});
+    $("hwBadge").textContent=list.length;
+    if(list.length===0){
+      box.innerHTML='<div class="empty"><span class="big">📭</span>还没有作业，去上面添加或从微信粘贴～</div>';
+      return;
+    }
+    TASK_SUBJECTS.forEach(function(s){
+      var items=list.filter(function(t){return t.subject===s.key;});
+      if(items.length===0) return;
+      var group=document.createElement("div"); group.className="hw-group";
+      group.innerHTML='<div class="hw-subj"><span class="chip">'+s.icon+' '+s.key+'</span><span class="hw-count">'+items.length+'</span></div>';
+      var ul=document.createElement("ul"); ul.className="tasks";
+      items.forEach(function(t){ ul.insertAdjacentHTML("beforeend", homeworkItemHtml(t)); });
+      group.appendChild(ul); box.appendChild(group);
+    });
+    // 兜底：科目不在预设列表里时归到「其他」
+    var presetKeys=TASK_SUBJECTS.map(function(s){return s.key;});
+    var others=list.filter(function(t){return presetKeys.indexOf(t.subject)<0;});
+    if(others.length){
+      var g=document.createElement("div"); g.className="hw-group";
+      g.innerHTML='<div class="hw-subj"><span class="chip">⭐ 其他</span><span class="hw-count">'+others.length+'</span></div>';
+      var u=document.createElement("ul"); u.className="tasks";
+      others.forEach(function(t){ u.insertAdjacentHTML("beforeend", homeworkItemHtml(t)); });
+      g.appendChild(u); box.appendChild(g);
+    }
+  }
+  function renderTaskList(type, containerId, badgeId){
+    var list = state.tasks.filter(function(t){return t.type===type;});
+    var ul=$(containerId); ul.innerHTML="";
+    if(list.length===0){
+      var tip = type==="notice"?"还没有老师通知，比如「明天带跳绳」"
+               : "还没有家长任务，比如「帮打印资料」";
+      ul.innerHTML='<div class="empty"><span class="big">📭</span>'+tip+'</div>';
+    } else {
+      list.forEach(function(t){ ul.insertAdjacentHTML("beforeend", taskItemHtml(t)); });
+    }
+    $(badgeId).textContent = list.length;
+  }
+
+  function renderProgress(){
+    var hw = state.tasks.filter(function(t){return t.type==="homework";});
+    var total=hw.length, done=hw.filter(function(t){return t.done;}).length;
+    $("count").textContent=done+" / "+total;
+    $("bar").style.width=(total?Math.round(done/total*100):0)+"%";
+    var s=""; for(var i=0;i<done;i++)s+="⭐"; for(var j=done;j<total;j++)s+="☆";
+    $("stars").textContent=s;
+  }
+
+  function renderNotes(){
+    var grid=$("notesGrid"); grid.innerHTML="";
+    var list = state.notes.filter(function(n){
+      if(noteFilter!=="all" && n.subject!==noteFilter) return false;
+      if(noteTodayOnly && n.date!==todayStr()) return false;
+      return true;
+    });
+    if(list.length===0){
+      grid.innerHTML='<div class="empty"><span class="big">📝</span>'+(noteTodayOnly?"今天还没有课堂笔记":"没有符合条件的笔记")+'</div>';
+      return;
+    }
+    list.forEach(function(n){
+      var imgs=(n.images||[]).map(function(u){
+        return '<div class="thumb" data-img="'+escapeHtml(u)+'"><img src="'+escapeHtml(u)+'" alt="笔记图片"></div>';
+      }).join("");
+      var html='<div class="note" data-id="'+n.id+'">'+
+        '<div class="note-head"><span class="chip">'+subjectIcon(n.subject,NOTE_SUBJECTS)+' '+n.subject+'</span>'+
+        '<span class="note-date">'+n.date+'</span>'+
+        '<button class="del" data-act="delnote" style="margin-left:auto">×</button></div>'+
+        '<div class="note-text">'+escapeHtml(n.text||"")+'</div>'+
+        (imgs?'<div class="note-imgs">'+imgs+'</div>':'')+'</div>';
+      grid.insertAdjacentHTML("beforeend", html);
+    });
+  }
+
+  function renderPending(){
+    var box=$("noteImgs"); box.innerHTML="";
+    pendingImages.forEach(function(u,idx){
+      var t=document.createElement("div"); t.className="thumb";
+      t.innerHTML='<img src="'+escapeHtml(u)+'"><button class="rm" data-idx="'+idx+'">×</button>';
+      t.querySelector(".rm").onclick=function(){ pendingImages.splice(idx,1); renderPending(); };
+      box.appendChild(t);
+    });
+  }
+
+  function renderAll(){
+    renderProgress();
+    renderHomework();
+    renderTaskList("notice","ntList","ntBadge");
+    renderTaskList("parent","ptList","ptBadge");
+    renderNotes();
+    // 标题从状态同步到输入框（仅当输入框未聚焦时，避免打断用户编辑）
+    var tEl=$("title");
+    if(tEl && document.activeElement!==tEl) tEl.value=state.title||"我的作业本";
+  }
+  function updateAddHint(){
+    $("addHint").textContent = curType==="homework"
+      ? "先选好科目标签（如📖语文），再粘贴微信群作业：自动按换行/序号拆成多条 ✂️（不识别科目，统一归到所选科目）"
+      : curType==="notice" ? "记录老师提醒、明天要带的东西等。"
+      : "记录需要家长帮忙做的事。";
+  }
+
+  // ---------- 操作 ----------
+  function addTask(text){
+    text=(text||"").trim(); if(!text) return false;
+    var time="";
+    var m=text.match(/(\d{1,2}[点:：]\d{0,2})|(\d{1,2}[:：]\d{2})/);
+    if(m) time=m[0].replace(/[点：]/g,":").replace(/:$/,"");
+    state.tasks.push({id:uid(),text:text,subject:curType==="homework"?curSubject:"其他",time:time,done:false,type:curType});
+    return true;
+  }
+  function toggleTask(id){var t=state.tasks.filter(function(x){return x.id===id;})[0];if(!t)return;t.done=!t.done;save();renderAll();if(t.done){burst();checkAllDone();}}
+  function delTask(id){state.tasks=state.tasks.filter(function(x){return x.id!==id;});save();renderAll();}
+
+  function splitHomework(raw){
+    var lines=raw.split(/[\n\r]+/).map(function(s){return s.trim();}).filter(Boolean);
+    var out=[];
+    lines.forEach(function(line){
+      if(isNoise(line)) return;
+      // 以「序号(1. 2、3)」为分隔（序号前可为行首/空白/中文标点/冒号），剥离序号后再按句末标点切分
+      var parts=line.split(/(?:^|[\s。、，,；;：:！？!?])\d+[.、)]\s*/).map(function(s){return s.trim();}).filter(Boolean);
+      if(parts.length===0) parts=[cleanItem(line)];
+      parts.forEach(function(p){
+        if(isNoise(p)) return;
+        p.split(/[。！？；;]/).map(function(s){return cleanItem(s).trim();}).filter(Boolean).forEach(function(x){if(!isNoise(x)) out.push(x);});
+      });
+    });
+    return out;
+  }
+  function cleanItem(text){
+    // 去掉开头常见的寒暄词
+    return text.replace(/^(各位家长好?|各位家长|家长好|老师好|大家好|同学们好|各位同学|亲爱的家长|晚上好|下午好|早上好|早安|晚安)[，,、：:；;\s]+/i,"").trim();
+  }
+  function isNoise(text){
+    if(!text) return true;
+    var t=text.trim();
+    if(t.length===0) return true;
+    if(t.length===1) return true; // 单字通常不是作业
+    // 常见寒暄、称呼、署名、纯表情（去掉 emoji 后再匹配，可过滤“好的👌”这类组合）
+    var noiseRe=/^(各位家长好?|各位家长|家长好|老师好|大家好|同学们好|各位同学|亲爱的家长|晚上好|下午好|早上好|早安|晚安|请查收|请知悉|收到请回复|收到|谢谢|谢谢大家|辛苦了|再见|拜拜|好的|ok|OK|可以|明白|嗯嗯|是的|是的收到|👍|🌹|❤️|✅|🙏|🤝|👌)$/i;
+    if(noiseRe.test(t)) return true;
+    var noEmoji=t.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F100}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/gu,"");
+    if(noEmoji.length>=1 && noiseRe.test(noEmoji)) return true;
+    // 引导语："今天的作业如下：""作业如下""今日任务："
+    if(/^(今天的|今日|今天)?(作业|任务)(是|如下|为|有)?[：:]?$/.test(t)) return true;
+    // 日期/标题行："6月26日作业""6月26日 练习"
+    if(/^\d{1,2}月\d{1,2}日.*(作业|任务|练习)?$/.test(t)) return true;
+    // 科目标题前缀："数：""语："（单字+冒号）
+    if(/^[\u4e00-\u9fa5][：:]$/.test(t)) return true;
+    // 老师署名：X老师
+    if(/^[\u4e00-\u9fa5]{1,4}老师$/.test(t)) return true;
+    // 纯符号/表情
+    if(/^[^\u4e00-\u9fa5a-zA-Z0-9]+$/.test(t)) return true;
+    return false;
+  }
+  function uploadImage(dataUrl){
+    return fetch("/api/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:dataUrl})})
+      .then(function(r){return r.json();})
+      .then(function(d){ if(d&&d.url) return d.url; throw new Error(d.error||"上传失败"); });
+  }
+  function addNote(){
+    var text=$("noteText").value.trim();
+    if(!text && pendingImages.length===0){ $("noteText").focus(); return; }
+    var note={id:uid(),subject:curNoteSubject,text:text,images:pendingImages.slice(),date:todayStr()};
+    state.notes.push(note);
+    pendingImages=[]; renderPending();
+    $("noteText").value="";
+    save(); renderNotes();
+    toast("笔记已保存 📝");
+  }
+  function delNote(id){state.notes=state.notes.filter(function(x){return x.id!==id;});save();renderNotes();}
+
+
+  function checkAllDone(){
+    var hw=state.tasks.filter(function(t){return t.type==="homework";});
+    var done=hw.filter(function(t){return t.done;}).length;
+    if(hw.length>0 && done===hw.length){
+      setTimeout(function(){$("celebText").textContent=PRAISE[Math.floor(Math.random()*PRAISE.length)];$("celebrate").classList.add("show");bigBurst();},350);
+    }
+  }
+
+  // ---------- 分享 ----------
+  function shareUrl(){return location.origin+location.pathname+"?b="+boardId;}
+  function copyLink(){
+    var url=shareUrl();
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){toast("链接已复制，去 QQ 粘贴吧！");},function(){fallbackCopy(url);});}
+    else fallbackCopy(url);
+  }
+  function fallbackCopy(url){var ta=document.createElement("textarea");ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("链接已复制！");}catch(e){toast("请长按链接复制");}document.body.removeChild(ta);}
+  function shareQQ(){
+    var url=encodeURIComponent(shareUrl());
+    var title=encodeURIComponent(state.title||"我的作业本");
+    var summary=encodeURIComponent("今天的作业清单来啦，做完一项勾一项～");
+    window.open("https://connect.qq.com/widget/shareqq/index.html?url="+url+"&title="+title+"&summary="+summary,"_blank");
+  }
+
+  // ---------- 特效 ----------
+  function burst(){for(var i=0;i<10;i++){var s=document.createElement("div");s.className="confetti";s.textContent=CONFETTI[Math.floor(Math.random()*CONFETTI.length)];s.style.left=Math.random()*100+"vw";s.style.animationDuration=(1.6+Math.random()*1.2)+"s";document.body.appendChild(s);(function(el){setTimeout(function(){document.body.removeChild(el);},2800);})(s);}}
+  function bigBurst(){for(var i=0;i<40;i++){(function(d){setTimeout(burst,d);})(i*40);}}
+  var toastTimer;
+  function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show");},2200);}
+
+  // ---------- 17:30 提醒 ----------
+  function checkSchedule(){
+    var now=new Date();
+    if(now.getHours()===17 && now.getMinutes()>=30 && !remindedToday){
+      remindedToday=true;
+      $("remind").classList.add("show");
+      if("Notification" in window && Notification.permission==="granted"){
+        try{ new Notification("作业本提醒",{body:"17:30 啦，记得把今天的作业本转发到 QQ～"}); }catch(e){}
+      }
+    }
+    if(now.getHours()===0 && now.getMinutes()===0) remindedToday=false;
+  }
+  function enableBell(){
+    if(!("Notification" in window)){ toast("当前浏览器不支持系统通知，但页面内提醒仍有效"); return; }
+    Notification.requestPermission().then(function(p){
+      if(p==="granted"){ toast("已开启🔔，17:30 会提醒你转发"); localStorage.setItem("bell","1"); }
+      else toast("未授权通知，页面内提醒仍会在常开时弹出");
+    });
+  }
+
+  // ---------- 事件绑定 ----------
+  function bind(){
+    $("addBtn").onclick=function(){ if(addTask($("taskInput").value)){ $("taskInput").value=""; save(); renderAll(); } };
+    $("taskInput").addEventListener("keydown",function(e){if(e.key==="Enter"){$("addBtn").click();}});
+
+    // 在添加栏粘贴 → 自动识别并拆分成多条任务（无需按钮）
+    $("taskInput").addEventListener("paste", function(e){
+      var cd = e.clipboardData || window.clipboardData;
+      var text = cd ? cd.getData("text") : "";
+      if(!text || !text.trim()) return;
+      var items = splitHomework(text);
+      if(items.length > 1){
+        e.preventDefault();
+        var added = 0;
+        items.forEach(function(it){
+          var time=""; var m=it.match(/(\d{1,2}[点:：]\d{0,2})/); if(m) time=m[0].replace(/[点：]/g,":").replace(/:$/,"");
+          state.tasks.push({id:uid(), text:it, subject:curType==="homework"?curSubject:"其他", time:time, done:false, type:curType});
+          added++;
+        });
+        this.value="";
+        save(); renderAll();
+        toast("已自动拆分 "+added+" 条 ✂️");
+      }
+      // 仅单条则走默认粘贴，留在输入框，可编辑后点添加
+    });
+
+    $("addNoteBtn").onclick=addNote;
+    $("noteFile").addEventListener("change",function(e){
+      Array.prototype.forEach.call(e.target.files,function(f){
+        if(!f.type.startsWith("image/")) return;
+        var r=new FileReader();
+        r.onload=function(){
+          toast("上传中…");
+          uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("上传失败："+(err.message||err));});
+        };
+        r.readAsDataURL(f);
+      });
+      e.target.value="";
+    });
+    // 粘贴图片到笔记文本框
+    $("noteText").addEventListener("paste",function(e){
+      var items=(e.clipboardData||window.clipboardData).items||[];
+      var handled=false;
+      Array.prototype.forEach.call(items,function(it){
+        if(it.type.indexOf("image")===0){
+          handled=true;
+          var f=it.getAsFile(); if(!f) return;
+          var r=new FileReader();
+          r.onload=function(){ toast("上传中…"); uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("上传失败："+(err.message||err));}); };
+          r.readAsDataURL(f);
+        }
+      });
+      if(handled) e.preventDefault();
+    });
+
+    // 列表事件委托
+    ["hwList","ntList","ptList"].forEach(function(id){
+      $(id).addEventListener("click",function(e){
+        var li=e.target.closest("li"); if(!li) return;
+        var id2=li.getAttribute("data-id");
+        var act=e.target.getAttribute("data-act");
+        if(act==="toggle") toggleTask(id2);
+        else if(act==="del") delTask(id2);
+      });
+    });
+    $("notesGrid").addEventListener("click",function(e){
+      var note=e.target.closest(".note"); if(!note) return;
+      var nid=note.getAttribute("data-id");
+      if(e.target.getAttribute("data-act")==="delnote"){ delNote(nid); return; }
+      var img=e.target.closest(".thumb");
+      if(img && img.getAttribute("data-img")) window.open(img.getAttribute("data-img"));
+    });
+
+    $("noteToggle").onclick=function(){
+      noteTodayOnly=!noteTodayOnly;
+      this.textContent=noteTodayOnly?"查看往日":"只看今天";
+      renderNotes();
+    };
+
+    $("title").addEventListener("input",function(){state.title=this.value;save();});
+    $("copyBtn").onclick=copyLink;
+    $("qqBtn").onclick=shareQQ;
+    $("bellBtn").onclick=enableBell;
+    $("celebClose").onclick=function(){$("celebrate").classList.remove("show");};
+    $("remindQQ").onclick=function(){shareQQ();$("remind").classList.remove("show");};
+    $("remindCopy").onclick=function(){copyLink();$("remind").classList.remove("show");};
+    $("remindLater").onclick=function(){$("remind").classList.remove("show");};
+
+  }
+
+  // ---------- 启动 ----------
+  boardId = ensureBoardId();
+  $("dateRow").textContent=fmtDate();
+  renderTypeTabs(); renderSubjectChips(); renderNoteSubjects(); renderNoteTabs();
+  updateAddHint();
+  bind();
+  renderAll();                       // 先用空白本渲染
+  load().then(function(){ renderAll(); setInterval(pollBoard, 20000); });  // 拉取云端并开启同步
+  if(localStorage.getItem("bell")==="1" && "Notification" in window && Notification.permission!=="denied"){
+    // 已授权则保持；未授权不强制弹窗
+  }
+  setInterval(checkSchedule, 30000);
+  checkSchedule();
+})();
+</script>
+</body>
+</html>

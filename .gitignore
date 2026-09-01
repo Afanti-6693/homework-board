@@ -1,0 +1,10 @@
+node_modules/
+.venv/
+data/images/*
+!data/images/.gitkeep
+*.png
+*.jpg
+*.jpeg
+.DS_Store
+homework-local.zip
+.cloudstudio
