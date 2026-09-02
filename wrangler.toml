@@ -1,0 +1,16 @@
+name = "homework-board"
+pages_build_output_dir = "."
+compatibility_date = "2024-09-23"
+
+# ============================================================
+# KV 绑定请在 Cloudflare Pages 控制台完成（无需改此文件）：
+#   项目 Settings → Functions → KV namespace bindings → 新增
+#   Variable name 必须填：BOARDS
+#   选一个 KV namespace（没有就先点 Create 新建一个）
+# 只有绑定了 BOARDS，作业本才能保存；未绑定时也能打开查看种子本。
+# ============================================================
+
+# 下面仅用于本地 `wrangler pages dev`，部署时用不到，可忽略：
+# [[kv_namespaces]]
+# binding = "BOARDS"
+# id = "你的_KV_namespace_ID"
