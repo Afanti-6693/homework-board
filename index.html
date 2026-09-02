@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>🌟 我的作业本</title>
+<title>🌟 学霸小雨点的作业本</title>
 <link rel="icon" href="data:,">
 <style>
   :root{
@@ -130,7 +130,7 @@
 <body>
 <div class="wrap">
   <header>
-    <input id="title" class="title-input" value="我的作业本" maxlength="20" />
+    <input id="title" class="title-input" value="学霸小雨点的作业本" maxlength="20" />
     <div class="date-row" id="dateRow"></div>
   </header>
 
@@ -185,7 +185,7 @@
         <label class="upload-btn">📷 上传图片<input type="file" id="noteFile" accept="image/*" multiple hidden></label>
         <button class="add-btn" id="addNoteBtn">＋ 保存笔记</button>
       </div>
-      <div class="hint">小提示：在文本框里按 <code>Ctrl/Cmd+V</code> 可直接粘贴微信复制的图片（需部署到服务器后生效）。</div>
+      <div class="hint">小提示：在文本框里按 <code>Ctrl/Cmd+V</code> 可直接粘贴微信复制的图片。</div>
     </div>
   </div>
 
@@ -195,8 +195,8 @@
     <button class="btn bell" id="bellBtn">🔔 开启提醒</button>
   </div>
   <p class="hint" style="text-align:center;">
-    作业本存在云端，把同一个链接发给家人，大家看到的是同一本 ✨<br/>
-    家长加作业、孩子勾选约 20 秒同步；带图笔记需部署到服务器后上传显示。
+    作业本存在本机浏览器；每次更新后点「复制链接」把这一本打包进链接发给家人，<br/>
+    家人打开链接即看到同样内容，可继续勾选/添加后再转发 ✨
   </p>
 </div>
 
@@ -245,28 +245,74 @@
   var PRAISE = ["你真是太棒了，给你一百个赞！","作业小达人就是你！","妈妈/爸爸要给你鼓掌啦 👏","今天的你闪闪发光 ✨","全部搞定，去玩吧！"];
   var CONFETTI = ["🎉","⭐","🌟","💖","🍬","🌈","✨","🏆"];
 
+  // 开箱示例本（?b=haohao0901 首次打开时使用）
+  var SEED = {
+    title:"学霸小雨点的作业本",
+    tasks:[
+      {id:"tmtiioo4txdn1q",text:"练习 P1-2",subject:"数学",type:"homework",done:true},
+      {id:"tmtiioo4tlux6s",text:"制作长方体、正方体，沿边剪开展开图（明天带来）",subject:"数学",type:"homework",done:true},
+      {id:"mtiir8zhmpii",text:"预习第2课 + 解词2个（不理解）",subject:"语文",type:"homework",done:true},
+      {id:"mtiisgvmussd",text:"明天检查预习",subject:"其他",type:"notice",done:true},
+      {id:"mtiit99f46t1",text:"明天上午科学课带两张A4彩色卡纸 彩笔",subject:"其他",type:"notice",done:false},
+      {id:"mtij0uro3zby",text:"造句：向….向…向….",subject:"语文",type:"homework",done:true}
+    ],
+    notes:[],
+    _v:0
+  };
+
   // ---------- 状态 ----------
-  var state = { title:"我的作业本", tasks:[], notes:[], _v:0 };
+  var state = normalize(null);
   var curType = "homework";
   var curSubject = "语文";
   var curNoteSubject = "语文";
-  var noteFilter = "all";      // all | 语文 | 数学 | 英语
+  var noteFilter = "all";
   var noteTodayOnly = true;
   var pendingImages = [];
   var remindedToday = false;
 
-  // ---------- 云端共享本 ----------
+  // ---------- 纯前端存储：本地 + 链接分享 ----------
   var boardId = null;
-  var savePending = false, saveDirty = false;
+
+  function b64encode(str){
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+  function b64decode(b64){
+    var bin = atob(b64);
+    var bytes = Uint8Array.from(bin, function(c){ return c.charCodeAt(0); });
+    return new TextDecoder().decode(bytes);
+  }
+  function getHashData(){
+    var m = (location.hash||"").match(/[#&]d=([^&]+)/);
+    if(!m) return null;
+    try { return normalize(JSON.parse(b64decode(decodeURIComponent(m[1])))); }
+    catch(e){ return null; }
+  }
+  function getLocalData(){
+    try { var s = localStorage.getItem("hw_"+boardId); return s ? normalize(JSON.parse(s)) : null; }
+    catch(e){ return null; }
+  }
+  // 把整本写入地址栏的 #d= ，让「刷新/收藏」也在
+  function writeHash(){
+    var url = location.pathname + "?b=" + boardId + "#d=" + encodeURIComponent(b64encode(JSON.stringify(state)));
+    history.replaceState(null, "", url);
+  }
+  // 把整本数据存入「分享链接」中（接收方打开即一模一样）
+  function shareUrl(){
+    return location.origin + location.pathname + "?b=" + boardId +
+      "#d=" + encodeURIComponent(b64encode(JSON.stringify(state)));
+  }
 
   function newBoardId(){
     var a = new Uint8Array(9);
     (window.crypto || window.msCrypto).getRandomValues(a);
     return Array.prototype.map.call(a, function(b){ return ("0"+b.toString(16)).slice(-2); }).join("");
   }
-  function getBoardIdFromUrl(){ var p = new URLSearchParams(location.search); return p.get("b"); }
   function ensureBoardId(){
-    var id = getBoardIdFromUrl();
+    var p = new URLSearchParams(location.search);
+    var id = p.get("b");
     if(!id){
       id = newBoardId();
       var u = new URL(location.href); u.searchParams.set("b", id);
@@ -276,36 +322,26 @@
   }
   function normalize(d){
     d = d || {};
-    if(!d.title) d.title = "我的作业本";
+    if(!d.title) d.title = "学霸小雨点的作业本";
     if(!Array.isArray(d.tasks)) d.tasks = [];
     if(!Array.isArray(d.notes)) d.notes = [];
     if(typeof d._v !== "number") d._v = 0;
     return d;
   }
 
+  // 载入顺序：分享链接(#d) > 本机保存 > 示例本 > 空白本
   function load(){
-    return fetch("/api/board/" + boardId, { cache:"no-store" })
-      .then(function(r){ if(!r.ok) throw new Error("load failed"); return r.json(); })
-      .then(function(d){ state = normalize(d); })
-      .catch(function(e){ state = normalize(null); toast("⚠️ 云端读取失败，已用空白本（可刷新重试）"); });
+    var fromHash = getHashData();
+    if(fromHash){
+      state = fromHash;
+      save();              // 顺手存到本机，避免刷新后丢失
+    } else {
+      state = getLocalData() || (boardId === "haohao0901" ? normalize(SEED) : normalize(null));
+    }
   }
+  // 保存到本机浏览器（不依赖服务器）
   function save(){
-    if(savePending){ saveDirty = true; return; }
-    savePending = true;
-    state._v = (state._v || 0) + 1;
-    var payload = JSON.stringify(state);
-    fetch("/api/board/" + boardId, { method:"POST", headers:{"Content-Type":"application/json"}, body:payload })
-      .then(function(r){ if(!r.ok) throw new Error("save failed"); })
-      .catch(function(e){ state._v = Math.max(0, (state._v || 1) - 1); toast("⚠️ 保存失败，请检查网络后重试"); })
-      .then(function(){ savePending = false; if(saveDirty){ saveDirty = false; save(); } });
-  }
-  // 近实时同步：他人改动后约 20 秒在本机刷新
-  function pollBoard(){
-    if(savePending || document.hidden) return;
-    fetch("/api/board/" + boardId, { cache:"no-store" })
-      .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(d){ if(!d) return; d = normalize(d); if((d._v || 0) > (state._v || 0)){ state = d; renderAll(); } })
-      .catch(function(){});
+    try { localStorage.setItem("hw_"+boardId, JSON.stringify(state)); } catch(e){}
   }
 
   // ---------- 工具 ----------
@@ -372,7 +408,6 @@
       (t.time?'<span class="chip">⏰ '+escapeHtml(t.time)+'</span>':'')+'</div></div>'+
       '<button class="del" data-act="del">×</button></li>';
   }
-  // 单条作业（分组后不再重复科目标签，科目标签已在组头）
   function homeworkItemHtml(t){
     return '<li class="task'+(t.done?" done":"")+'" data-id="'+t.id+'">'+
       '<div class="check" data-act="toggle">'+(t.done?"✓":"")+'</div>'+
@@ -381,7 +416,6 @@
       '</div>'+
       '<button class="del" data-act="del">×</button></li>';
   }
-  // 今日作业：按科目标签分组渲染
   function renderHomework(){
     var box=$("hwList"); box.innerHTML="";
     var list=state.tasks.filter(function(t){return t.type==="homework";});
@@ -399,7 +433,6 @@
       items.forEach(function(t){ ul.insertAdjacentHTML("beforeend", homeworkItemHtml(t)); });
       group.appendChild(ul); box.appendChild(group);
     });
-    // 兜底：科目不在预设列表里时归到「其他」
     var presetKeys=TASK_SUBJECTS.map(function(s){return s.key;});
     var others=list.filter(function(t){return presetKeys.indexOf(t.subject)<0;});
     if(others.length){
@@ -473,9 +506,8 @@
     renderTaskList("notice","ntList","ntBadge");
     renderTaskList("parent","ptList","ptBadge");
     renderNotes();
-    // 标题从状态同步到输入框（仅当输入框未聚焦时，避免打断用户编辑）
     var tEl=$("title");
-    if(tEl && document.activeElement!==tEl) tEl.value=state.title||"我的作业本";
+    if(tEl && document.activeElement!==tEl) tEl.value=state.title||"学霸小雨点的作业本";
   }
   function updateAddHint(){
     $("addHint").textContent = curType==="homework"
@@ -501,7 +533,6 @@
     var out=[];
     lines.forEach(function(line){
       if(isNoise(line)) return;
-      // 以「序号(1. 2、3)」为分隔（序号前可为行首/空白/中文标点/冒号），剥离序号后再按句末标点切分
       var parts=line.split(/(?:^|[\s。、，,；;：:！？!?])\d+[.、)]\s*/).map(function(s){return s.trim();}).filter(Boolean);
       if(parts.length===0) parts=[cleanItem(line)];
       parts.forEach(function(p){
@@ -512,36 +543,26 @@
     return out;
   }
   function cleanItem(text){
-    // 去掉开头常见的寒暄词
     return text.replace(/^(各位家长好?|各位家长|家长好|老师好|大家好|同学们好|各位同学|亲爱的家长|晚上好|下午好|早上好|早安|晚安)[，,、：:；;\s]+/i,"").trim();
   }
   function isNoise(text){
     if(!text) return true;
     var t=text.trim();
     if(t.length===0) return true;
-    if(t.length===1) return true; // 单字通常不是作业
-    // 常见寒暄、称呼、署名、纯表情（去掉 emoji 后再匹配，可过滤“好的👌”这类组合）
+    if(t.length===1) return true;
     var noiseRe=/^(各位家长好?|各位家长|家长好|老师好|大家好|同学们好|各位同学|亲爱的家长|晚上好|下午好|早上好|早安|晚安|请查收|请知悉|收到请回复|收到|谢谢|谢谢大家|辛苦了|再见|拜拜|好的|ok|OK|可以|明白|嗯嗯|是的|是的收到|👍|🌹|❤️|✅|🙏|🤝|👌)$/i;
     if(noiseRe.test(t)) return true;
     var noEmoji=t.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F100}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/gu,"");
     if(noEmoji.length>=1 && noiseRe.test(noEmoji)) return true;
-    // 引导语："今天的作业如下：""作业如下""今日任务："
     if(/^(今天的|今日|今天)?(作业|任务)(是|如下|为|有)?[：:]?$/.test(t)) return true;
-    // 日期/标题行："6月26日作业""6月26日 练习"
     if(/^\d{1,2}月\d{1,2}日.*(作业|任务|练习)?$/.test(t)) return true;
-    // 科目标题前缀："数：""语："（单字+冒号）
     if(/^[\u4e00-\u9fa5][：:]$/.test(t)) return true;
-    // 老师署名：X老师
     if(/^[\u4e00-\u9fa5]{1,4}老师$/.test(t)) return true;
-    // 纯符号/表情
     if(/^[^\u4e00-\u9fa5a-zA-Z0-9]+$/.test(t)) return true;
     return false;
   }
-  function uploadImage(dataUrl){
-    return fetch("/api/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:dataUrl})})
-      .then(function(r){return r.json();})
-      .then(function(d){ if(d&&d.url) return d.url; throw new Error(d.error||"上传失败"); });
-  }
+  // 纯前端：图片直接转 base64 存进本子（不再上传服务器）
+  function uploadImage(dataUrl){ return Promise.resolve(dataUrl); }
   function addNote(){
     var text=$("noteText").value.trim();
     if(!text && pendingImages.length===0){ $("noteText").focus(); return; }
@@ -564,16 +585,16 @@
   }
 
   // ---------- 分享 ----------
-  function shareUrl(){return location.origin+location.pathname+"?b="+boardId;}
   function copyLink(){
     var url=shareUrl();
+    writeHash();   // 把当前数据同步进地址栏，刷新/收藏也不丢
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){toast("链接已复制，去 QQ 粘贴吧！");},function(){fallbackCopy(url);});}
     else fallbackCopy(url);
   }
   function fallbackCopy(url){var ta=document.createElement("textarea");ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("链接已复制！");}catch(e){toast("请长按链接复制");}document.body.removeChild(ta);}
   function shareQQ(){
     var url=encodeURIComponent(shareUrl());
-    var title=encodeURIComponent(state.title||"我的作业本");
+    var title=encodeURIComponent(state.title||"学霸小雨点的作业本");
     var summary=encodeURIComponent("今天的作业清单来啦，做完一项勾一项～");
     window.open("https://connect.qq.com/widget/shareqq/index.html?url="+url+"&title="+title+"&summary="+summary,"_blank");
   }
@@ -609,7 +630,6 @@
     $("addBtn").onclick=function(){ if(addTask($("taskInput").value)){ $("taskInput").value=""; save(); renderAll(); } };
     $("taskInput").addEventListener("keydown",function(e){if(e.key==="Enter"){$("addBtn").click();}});
 
-    // 在添加栏粘贴 → 自动识别并拆分成多条任务（无需按钮）
     $("taskInput").addEventListener("paste", function(e){
       var cd = e.clipboardData || window.clipboardData;
       var text = cd ? cd.getData("text") : "";
@@ -627,7 +647,6 @@
         save(); renderAll();
         toast("已自动拆分 "+added+" 条 ✂️");
       }
-      // 仅单条则走默认粘贴，留在输入框，可编辑后点添加
     });
 
     $("addNoteBtn").onclick=addNote;
@@ -635,15 +654,11 @@
       Array.prototype.forEach.call(e.target.files,function(f){
         if(!f.type.startsWith("image/")) return;
         var r=new FileReader();
-        r.onload=function(){
-          toast("上传中…");
-          uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("上传失败："+(err.message||err));});
-        };
+        r.onload=function(){ toast("已加入图片～"); uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("处理失败："+(err.message||err));}); };
         r.readAsDataURL(f);
       });
       e.target.value="";
     });
-    // 粘贴图片到笔记文本框
     $("noteText").addEventListener("paste",function(e){
       var items=(e.clipboardData||window.clipboardData).items||[];
       var handled=false;
@@ -652,14 +667,13 @@
           handled=true;
           var f=it.getAsFile(); if(!f) return;
           var r=new FileReader();
-          r.onload=function(){ toast("上传中…"); uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("上传失败："+(err.message||err));}); };
+          r.onload=function(){ toast("已加入图片～"); uploadImage(r.result).then(function(u){pendingImages.push(u);renderPending();}).catch(function(err){toast("处理失败："+(err.message||err));}); };
           r.readAsDataURL(f);
         }
       });
       if(handled) e.preventDefault();
     });
 
-    // 列表事件委托
     ["hwList","ntList","ptList"].forEach(function(id){
       $(id).addEventListener("click",function(e){
         var li=e.target.closest("li"); if(!li) return;
@@ -700,11 +714,8 @@
   renderTypeTabs(); renderSubjectChips(); renderNoteSubjects(); renderNoteTabs();
   updateAddHint();
   bind();
-  renderAll();                       // 先用空白本渲染
-  load().then(function(){ renderAll(); setInterval(pollBoard, 20000); });  // 拉取云端并开启同步
-  if(localStorage.getItem("bell")==="1" && "Notification" in window && Notification.permission!=="denied"){
-    // 已授权则保持；未授权不强制弹窗
-  }
+  load();                 // 纯前端：从分享链接 / 本机 / 示例本载入
+  renderAll();
   setInterval(checkSchedule, 30000);
   checkSchedule();
 })();
