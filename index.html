@@ -136,7 +136,7 @@
 
   <!-- 作业进度 -->
   <div class="progress-card">
-    <div class="progress-top"><span>今日作业完成啦～</span><span class="count" id="count">0 / 0</span></div>
+    <div class="progress-top"><span id="progressText">今天也要加油鸭～</span><span class="count" id="count">0 / 0</span></div>
     <div class="bar"><i id="bar"></i></div>
     <div class="stars" id="stars"></div>
   </div>
@@ -249,12 +249,12 @@
   var SEED = {
     title:"学霸小雨点的作业本",
     tasks:[
-      {id:"tmtiioo4txdn1q",text:"练习 P1-2",subject:"数学",type:"homework",done:true},
-      {id:"tmtiioo4tlux6s",text:"制作长方体、正方体，沿边剪开展开图（明天带来）",subject:"数学",type:"homework",done:true},
-      {id:"mtiir8zhmpii",text:"预习第2课 + 解词2个（不理解）",subject:"语文",type:"homework",done:true},
-      {id:"mtiisgvmussd",text:"明天检查预习",subject:"其他",type:"notice",done:true},
+      {id:"tmtiioo4txdn1q",text:"练习 P1-2",subject:"数学",type:"homework",done:false},
+      {id:"tmtiioo4tlux6s",text:"制作长方体、正方体，沿边剪开展开图（明天带来）",subject:"数学",type:"homework",done:false},
+      {id:"mtiir8zhmpii",text:"预习第2课 + 解词2个（不理解）",subject:"语文",type:"homework",done:false},
+      {id:"mtiisgvmussd",text:"明天检查预习",subject:"其他",type:"notice",done:false},
       {id:"mtiit99f46t1",text:"明天上午科学课带两张A4彩色卡纸 彩笔",subject:"其他",type:"notice",done:false},
-      {id:"mtij0uro3zby",text:"造句：向….向…向….",subject:"语文",type:"homework",done:true}
+      {id:"mtij0uro3zby",text:"造句：向….向…向….",subject:"语文",type:"homework",done:false}
     ],
     notes:[],
     _v:0
@@ -273,14 +273,19 @@
   // ---------- 纯前端存储：本地 + 链接分享 ----------
   var boardId = null;
 
+  // 用 URL 安全 base64（去掉 +/=），省掉 encodeURIComponent 的三倍膨胀，链接短一大截
   function b64encode(str){
     var bytes = new TextEncoder().encode(str);
     var bin = "";
     bytes.forEach(function(b){ bin += String.fromCharCode(b); });
-    return btoa(bin);
+    return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   }
   function b64decode(b64){
-    var bin = atob(b64);
+    var s = String(b64);
+    try { s = decodeURIComponent(s); } catch(e){}   // 兼容早期链接
+    s = s.replace(/-/g,"+").replace(/_/g,"/");
+    while(s.length % 4) s += "=";
+    var bin = atob(s);
     var bytes = Uint8Array.from(bin, function(c){ return c.charCodeAt(0); });
     return new TextDecoder().decode(bytes);
   }
@@ -294,15 +299,31 @@
     try { var s = localStorage.getItem("hw_"+boardId); return s ? normalize(JSON.parse(s)) : null; }
     catch(e){ return null; }
   }
-  // 把整本写入地址栏的 #d= ，让「刷新/收藏」也在
+  // 笔记图片是 base64 大块，塞进链接会变成几十万字符、QQ 根本发不出去 → 分享时剔除
+  function hasImages(){
+    return (state.notes||[]).some(function(n){ return (n.images||[]).length > 0; });
+  }
+  function sharePayload(){
+    return {
+      title: state.title,
+      tasks: state.tasks,
+      notes: (state.notes||[]).map(function(n){
+        return {id:n.id, subject:n.subject, text:n.text, date:n.date, images:[]};
+      }),
+      _v: state._v
+    };
+  }
+  // 把整本写入地址栏的 #d= ，让「刷新/收藏」也在（有图片则跳过，本地存储已能扛刷新）
   function writeHash(){
-    var url = location.pathname + "?b=" + boardId + "#d=" + encodeURIComponent(b64encode(JSON.stringify(state)));
-    history.replaceState(null, "", url);
+    if(hasImages()) return;
+    var enc = b64encode(JSON.stringify(sharePayload()));
+    if(enc.length > 8000) return;
+    history.replaceState(null, "", location.pathname + "?b=" + boardId + "#d=" + enc);
   }
   // 把整本数据存入「分享链接」中（接收方打开即一模一样）
   function shareUrl(){
     return location.origin + location.pathname + "?b=" + boardId +
-      "#d=" + encodeURIComponent(b64encode(JSON.stringify(state)));
+      "#d=" + b64encode(JSON.stringify(sharePayload()));
   }
 
   function newBoardId(){
@@ -341,7 +362,8 @@
   }
   // 保存到本机浏览器（不依赖服务器）
   function save(){
-    try { localStorage.setItem("hw_"+boardId, JSON.stringify(state)); } catch(e){}
+    try { localStorage.setItem("hw_"+boardId, JSON.stringify(state)); }
+    catch(e){ toast("存储空间不足啦，删掉几张笔记图片试试"); }
   }
 
   // ---------- 工具 ----------
@@ -460,6 +482,8 @@
     var hw = state.tasks.filter(function(t){return t.type==="homework";});
     var total=hw.length, done=hw.filter(function(t){return t.done;}).length;
     $("count").textContent=done+" / "+total;
+    $("progressText").textContent = total===0 ? "先添加今天的作业吧～"
+      : (done===total ? "今日作业完成啦～" : "还有 "+(total-done)+" 项没做哦");
     $("bar").style.width=(total?Math.round(done/total*100):0)+"%";
     var s=""; for(var i=0;i<done;i++)s+="⭐"; for(var j=done;j<total;j++)s+="☆";
     $("stars").textContent=s;
@@ -562,7 +586,33 @@
     return false;
   }
   // 纯前端：图片直接转 base64 存进本子（不再上传服务器）
-  function uploadImage(dataUrl){ return Promise.resolve(dataUrl); }
+  // 手机原图 3~5MB，base64 后更大，直接存会撑爆 localStorage（约 5MB 上限）
+  // 这里压到最长边 1280px、JPEG 0.72，单张通常降到 150KB 上下
+  function uploadImage(dataUrl){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.onload = function(){
+        try{
+          var MAX = 1280, Q = 0.72;
+          var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          if(!w || !h) return resolve(dataUrl);
+          if(w > MAX || h > MAX){
+            var r = Math.min(MAX/w, MAX/h);
+            w = Math.round(w*r); h = Math.round(h*r);
+          }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img, 0, 0, w, h);
+          var out = c.toDataURL("image/jpeg", Q);
+          resolve(out.length < dataUrl.length ? out : dataUrl);   // 压缩反而变大就留原图
+        }catch(e){ resolve(dataUrl); }
+      };
+      img.onerror = function(){ resolve(dataUrl); };
+      img.src = dataUrl;
+    });
+  }
   function addNote(){
     var text=$("noteText").value.trim();
     if(!text && pendingImages.length===0){ $("noteText").focus(); return; }
@@ -588,7 +638,8 @@
   function copyLink(){
     var url=shareUrl();
     writeHash();   // 把当前数据同步进地址栏，刷新/收藏也不丢
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){toast("链接已复制，去 QQ 粘贴吧！");},function(){fallbackCopy(url);});}
+    var extra = hasImages() ? "（笔记图片只留在本机，不会进链接）" : "";
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){toast("链接已复制，去 QQ 粘贴吧！"+extra);},function(){fallbackCopy(url);});}
     else fallbackCopy(url);
   }
   function fallbackCopy(url){var ta=document.createElement("textarea");ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("链接已复制！");}catch(e){toast("请长按链接复制");}document.body.removeChild(ta);}
